@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.util.Set;
+import java.util.BitSet;
 
 @Mixin(BuiltChunk.class)
 public class ChunkRenderMixin {
@@ -26,11 +26,26 @@ public class ChunkRenderMixin {
 		BlockPos chunkOrigin = thisChunk.getOrigin();
 		ChunkPos chunkPos = new ChunkPos(chunkOrigin);
 
-		Set<ChunkPos> chunksToRender = Cobalt.chunksToRender.get();
-		if (chunksToRender.contains(chunkPos)) {
-			cir.setReturnValue(true);
-		} else {
-			cir.setReturnValue(false);
+		BitSet chunksToRenderBitSet = Cobalt.chunksToRender.get();
+
+		int renderDistanceChunks = client.options.getViewDistance().getValue();
+
+		int minChunkX = client.player.getChunkPos().x - renderDistanceChunks;
+		int minChunkZ = client.player.getChunkPos().z - renderDistanceChunks;
+		int size = renderDistanceChunks * 2 + 1;
+
+		int localX = chunkPos.x - minChunkX;
+		int localZ = chunkPos.z - minChunkZ;
+
+		if (localX >= 0 && localX < size && localZ >= 0 && localZ < size) {
+			int index = localX + localZ * size;
+
+			if (chunksToRenderBitSet.get(index)) {
+				cir.setReturnValue(true);
+				return;
+			}
 		}
+
+		cir.setReturnValue(false);
 	}
 }

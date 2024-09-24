@@ -1,7 +1,7 @@
 {
 	"schemaVersion": 1,
 	"id": "cobaltmod",
-	"version": "1.1-1.21",
+	"version": "1.2-1.21",
 	"name": "Cobalt",
 	"description": "Dynamically renders only visible chunks, boosting FPS and reducing GPU load. Ideal for complex worlds and high render distances.",
 	"authors": [
