@@ -24,8 +24,8 @@ Pull requests are the best way to propose changes to the codebase. We actively w
 ## Any contributions you make will be under the GNU General Public License version 3 (GPLv3) Software License
 In short, when you submit code changes, your submissions are understood to be under the same GNU General Public License version 3 (GPLv3) that covers the project. Feel free to contact the maintainers if that's a concern.
 
-## Report bugs using GitHub's [issues](https://github.com/Kubik-Modder/CobaltMod/issues)
-I use GitHub issues to track public bugs. Report a bug by [opening a new issue](https://github.com/Kubik-Modder/CobaltMod/issues); it's that easy!
+## Report bugs using GitHub's [issues](https://github.com/Kubik-Modder/CobaltMod-1.21/issues)
+I use GitHub issues to track public bugs. Report a bug by [opening a new issue](https://github.com/Kubik-Modder/CobaltMod-1.21/issues); it's that easy!
 
 ## Write bug reports with detail, background, and sample code
 
