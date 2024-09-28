@@ -15,11 +15,12 @@ I use GitHub to host code, to track issues and feature requests, as well as acce
 Pull requests are the best way to propose changes to the codebase. We actively welcome your pull requests:
 
 1. Fork the repo and create your branch from `main`.
-2. If you've added code that should be tested, add tests.
-3. If you've changed APIs, update the documentation.
-4. Ensure the test suite passes.
-5. Make sure your code lints.
-6. Issue that pull request!
+2. Document the changes you've made.
+3. If you've added code that should be tested, add tests.
+4. If you've changed APIs, update the documentation.
+5. Ensure the test suite passes.
+6. Make sure your code lints.
+7. Issue that pull request!
 
 ## Any contributions you make will be under the GNU General Public License version 3 (GPLv3) Software License
 In short, when you submit code changes, your submissions are understood to be under the same GNU General Public License version 3 (GPLv3) that covers the project. Feel free to contact the maintainers if that's a concern.
@@ -42,6 +43,7 @@ I use GitHub issues to track public bugs. Report a bug by [opening a new issue](
 ## Use a Consistent Coding Style
 
 * 4 spaces for indentation rather than tabs
+* Use Javadoc-style comments
 * You can try running `npm run lint` for style unification
 
 ## License
