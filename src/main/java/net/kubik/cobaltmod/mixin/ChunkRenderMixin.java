@@ -33,7 +33,7 @@ public class ChunkRenderMixin {
 
 		ChunkPos chunkPos = new ChunkPos(thisChunk.getOrigin());
 
-		BitSet chunksToRenderBitSet = Cobalt.chunksToRender;
+		BitSet chunksToRenderBitSet = Cobalt.getChunksToRender();
 
 		int renderDistanceChunks = client.options.getViewDistance().getValue();
 
@@ -44,14 +44,17 @@ public class ChunkRenderMixin {
 		int localX = chunkPos.x - minChunkX;
 		int localZ = chunkPos.z - minChunkZ;
 
-		if (localX >= 0 && localX < size && localZ >= 0 && localZ < size) {
-			int index = localX + localZ * size;
-			if (chunksToRenderBitSet.get(index)) {
-				cir.setReturnValue(true);
-				return;
-			}
+		// Early exit if the chunk is outside the render distance bounds
+		if (localX < 0 || localX >= size || localZ < 0 || localZ >= size) {
+			cir.setReturnValue(false);
+			return;
 		}
 
-		cir.setReturnValue(false);
+		int index = localX + localZ * size;
+		if (chunksToRenderBitSet.get(index)) {
+			cir.setReturnValue(true);
+		} else {
+			cir.setReturnValue(false);
+		}
 	}
 }

@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import java.util.BitSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * The main class for Cobalt, responsible for initializing the mod and managing chunk rendering.
@@ -23,9 +24,9 @@ public class Cobalt implements ModInitializer {
 	public static final int CHUNK_BUFFER_RADIUS = 2;
 
 	/**
-	 * A volatile BitSet to track which chunks should be rendered.
+	 * An AtomicReference to hold the BitSet indicating which chunks should be rendered.
 	 */
-	public static volatile BitSet chunksToRender = new BitSet();
+	private static final AtomicReference<BitSet> chunksToRender = new AtomicReference<>(new BitSet());
 
 	private Vec3d lastPlayerPos = Vec3d.ZERO;
 	private float lastPlayerYaw = 0f;
@@ -37,7 +38,11 @@ public class Cobalt implements ModInitializer {
 	/**
 	 * ExecutorService to handle chunk calculations in a separate thread.
 	 */
-	private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+	private final ExecutorService executorService = Executors.newSingleThreadExecutor(r -> {
+		Thread t = new Thread(r, "Cobalt-ChunkCalculator");
+		t.setDaemon(true);
+		return t;
+	});
 
 	/**
 	 * Initializes Cobalt by registering the world render event and setting up necessary resources.
@@ -64,9 +69,13 @@ public class Cobalt implements ModInitializer {
 			lastPlayerYaw = yaw;
 			lastPlayerPitch = pitch;
 
-			executorService.submit(() -> calculateChunksToRender(client, playerPos, yaw, pitch));
+			// Submit the chunk calculation task if not already running
+			if (!executorService.isShutdown()) {
+				executorService.submit(() -> calculateChunksToRender(client, playerPos, yaw, pitch));
+			}
 		});
 
+		// Shutdown the executor service gracefully on mod shutdown
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
 			executorService.shutdownNow();
 			LOGGER.info("Cobalt executor service shut down.");
@@ -82,12 +91,14 @@ public class Cobalt implements ModInitializer {
 	 * @param pitch     The player's current pitch.
 	 */
 	private void calculateChunksToRender(MinecraftClient client, Vec3d playerPos, float yaw, float pitch) {
-		BitSet chunksToRenderLocal = new BitSet();
+		BitSet newChunksToRender = new BitSet();
 
 		int renderDistanceChunks = client.options.getViewDistance().getValue();
 
+		// Calculate the player's look vector once
 		Vec3d lookVec = client.player.getRotationVec(1.0F).normalize();
 
+		// Precompute the cosine of the maximum angle (90 degrees)
 		double maxAngleCos = Math.cos(Math.toRadians(90.0));
 
 		ChunkPos playerChunkPos = client.player.getChunkPos();
@@ -102,36 +113,63 @@ public class Cobalt implements ModInitializer {
 
 		double playerY = playerPos.y;
 
+		// Precompute player position components to avoid repeated method calls
+		double playerX = playerPos.x;
+		double playerZ = playerPos.z;
+
+		// Iterate through chunks within the render distance
 		for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
 			double chunkCenterX = (chunkX << 4) + 8;
+			double deltaX = chunkCenterX - playerX;
 			for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
 				double chunkCenterZ = (chunkZ << 4) + 8;
-				Vec3d chunkCenter = new Vec3d(chunkCenterX, playerY, chunkCenterZ);
+				double deltaZ = chunkCenterZ - playerZ;
 
-				Vec3d toChunkVec = chunkCenter.subtract(playerPos).normalize();
+				// Calculate the direction vector to the chunk
+				double distanceSquared = deltaX * deltaX + deltaZ * deltaZ;
+				if (distanceSquared == 0) continue; // Skip the player's own chunk
 
-				double dotProduct = lookVec.dotProduct(toChunkVec);
+				// Normalize the vector
+				double invDistance = 1.0 / Math.sqrt(distanceSquared);
+				double toChunkX = deltaX * invDistance;
+				double toChunkZ = deltaZ * invDistance;
+
+				// Compute the dot product with the player's look vector
+				double dotProduct = lookVec.x * toChunkX + lookVec.z * toChunkZ;
 
 				if (dotProduct >= maxAngleCos) {
 					int localX = chunkX - minChunkX;
 					int localZ = chunkZ - minChunkZ;
 					int index = localX + localZ * size;
-					chunksToRenderLocal.set(index);
+					newChunksToRender.set(index);
 				}
 			}
 		}
 
+		// Add buffer chunks around the player's current chunk to prevent popping
 		for (int dx = -CHUNK_BUFFER_RADIUS; dx <= CHUNK_BUFFER_RADIUS; dx++) {
 			int chunkX = playerChunkX + dx;
 			for (int dz = -CHUNK_BUFFER_RADIUS; dz <= CHUNK_BUFFER_RADIUS; dz++) {
 				int chunkZ = playerChunkZ + dz;
 				int localX = chunkX - minChunkX;
 				int localZ = chunkZ - minChunkZ;
-				int index = localX + localZ * size;
-				chunksToRenderLocal.set(index);
+				if (localX >= 0 && localX < size && localZ >= 0 && localZ < size) {
+					int index = localX + localZ * size;
+					newChunksToRender.set(index);
+				}
 			}
 		}
 
-		chunksToRender = chunksToRenderLocal;
+		// Atomically update the chunksToRender reference
+		chunksToRender.set(newChunksToRender);
+	}
+
+	/**
+	 * Retrieves the current BitSet indicating which chunks should be rendered.
+	 *
+	 * @return The BitSet of chunks to render.
+	 */
+	public static BitSet getChunksToRender() {
+		return chunksToRender.get();
 	}
 }
