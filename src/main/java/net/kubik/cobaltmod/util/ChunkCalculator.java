@@ -65,7 +65,8 @@ public class ChunkCalculator {
         int renderDistanceChunks = client.options.getViewDistance().getValue();
 
         Vec3d lookVec = client.player.getRotationVec(1.0F).normalize();
-        double maxAngleCos = Math.cos(Math.toRadians(90.0));
+        double maxAngleCos = 0.0;  // 90 derecenin kosinüsü 0'dır
+    
 
         ChunkPos playerChunkPos = client.player.getChunkPos();
         int playerChunkX = playerChunkPos.x;
