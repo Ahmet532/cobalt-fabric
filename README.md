@@ -1,7 +1,7 @@
 # COBALT
 ![Cobalt logo image](https://cdn.modrinth.com/data/cached_images/c6eb4fb047b363e19e5f90f69d4713bed313f3bb.png)
 ## ⚠️ WARNING: Early Development Stage
-**Cobalt is currently in its early stages of development. Users may encounter bugs, unexpected behavior, or compatibility issues with other mods. Performance gains may vary significantly depending on system specifications and world complexity. Use at your own risk. If you encounter any issues, please report them [here](https://github.com/Kubik-Modder/CobaltMod-1.21/issues).**
+**Cobalt is currently in its early stages of development. Users may encounter bugs, unexpected behavior, or compatibility issues with other mods. Performance gains may vary significantly depending on system specifications and world complexity. Use at your own risk. If you encounter any issues, please report them [here](https://github.com/Kubik-Modder/cobalt-fabric/issues).**
 
 ## Overview
 Cobalt is an innovative, experimental Minecraft mod designed to dramatically enhance game performance through intelligent chunk rendering optimization. By leveraging advanced algorithms to dynamically manage chunk loading, Cobalt aims to significantly boost frame rates and reduce GPU load, particularly in complex worlds or when using high render distances.
