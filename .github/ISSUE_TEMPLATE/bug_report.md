@@ -1,6 +1,6 @@
 ---
 name: Bug Report
-about: Report a bug in Zirconium
+about: Report a bug in Cobalt
 title: "[BUG] "
 labels: bug
 assignees: ''
@@ -15,7 +15,7 @@ A clear and concise description of what the bug is.
 ### **2. Steps to Reproduce**
 List the steps to reproduce the behavior:
 1. **Start the Server:** Describe how you started the server (e.g., using a specific version of Minecraft, Fabric API, etc.).
-2. **Load the Mod:** Mention how you loaded Zirconium (e.g., through a mod loader, specific configuration).
+2. **Load the Mod:** Mention how you loaded Cobalt (e.g., through a mod loader, specific configuration).
 3. **Perform Actions:** Detail the actions you took that led to the bug.
 4. **Observe Behavior:** Describe what you observed that indicates the presence of the bug.
 
