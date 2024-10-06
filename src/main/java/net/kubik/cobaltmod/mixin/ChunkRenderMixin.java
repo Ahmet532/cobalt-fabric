@@ -12,15 +12,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.BitSet;
 
 /**
- * Mixin class that modifies the chunk rendering behavior to optimize performance.
+ * Mixin class for BuiltChunk to modify chunk rendering behavior.
  */
 @Mixin(BuiltChunk.class)
 public class ChunkRenderMixin {
 
 	/**
-	 * Determines whether a chunk should be built based on the precomputed chunks to render.
-	 *
-	 * @param cir The callback information for the method.
+	 * Injects into the shouldBuild method to determine if a chunk should be built based on Cobalt's calculations.
+	 * @param cir Callback info returnable.
 	 */
 	@Inject(method = "shouldBuild", at = @At("HEAD"), cancellable = true)
 	private void onShouldBuild(CallbackInfoReturnable<Boolean> cir) {
@@ -44,17 +43,12 @@ public class ChunkRenderMixin {
 		int localX = chunkPos.x - minChunkX;
 		int localZ = chunkPos.z - minChunkZ;
 
-		// Early exit if the chunk is outside the render distance bounds
 		if (localX < 0 || localX >= size || localZ < 0 || localZ >= size) {
 			cir.setReturnValue(false);
 			return;
 		}
 
 		int index = localX + localZ * size;
-		if (chunksToRenderBitSet.get(index)) {
-			cir.setReturnValue(true);
-		} else {
-			cir.setReturnValue(false);
-		}
+		cir.setReturnValue(chunksToRenderBitSet.get(index));
 	}
 }

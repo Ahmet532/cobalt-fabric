@@ -1,0 +1,57 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Build with Gradle
+        run: ./gradlew build
+
+      - name: Debug - List build directory
+        run: ls -R build/libs
+
+      - name: Find mod JAR
+        id: find_jar
+        run: |
+          MOD_JAR=$(find build/libs -name "cobaltmod-*-1.21.jar" -type f -print -quit)
+          echo "MOD_JAR=$MOD_JAR" >> $GITHUB_OUTPUT
+          echo "Found MOD_JAR: $MOD_JAR"
+          if [ -z "$MOD_JAR" ]; then
+            echo "Error: Could not find mod JAR"
+            exit 1
+          fi
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ steps.find_jar.outputs.MOD_JAR }}
+          asset_name: ${{ steps.find_jar.outputs.MOD_JAR }}
+          asset_content_type: application/java-archive

@@ -1,15 +1,16 @@
 {
 	"schemaVersion": 1,
 	"id": "cobaltmod",
-	"version": "1.4-1.21",
+	"version": "1.5-1.21",
 	"name": "Cobalt",
 	"description": "Dynamically renders only visible chunks, boosting FPS and reducing GPU load. Ideal for complex worlds and high render distances.",
 	"authors": [
 		"Kubik"
 	],
 	"contact": {
-		"homepage": "https://github.com/Kubik-Modder/CobaltMod-1.21",
-		"sources": "https://github.com/Kubik-Modder/CobaltMod-1.21"
+		"homepage": "https://github.com/Kubik-Modder/cobalt-fabric",
+		"sources": "https://github.com/Kubik-Modder/cobalt-fabric",
+		"issues": "https://github.com/Kubik-Modder/cobalt-fabric/issues"
 	},
 	"license": "GNU General Public License version 3 (GPLv3)",
 	"icon": "assets/cobaltmod/icon.png",
@@ -29,6 +30,7 @@
 		"fabric-api": "*"
 	},
 	"suggests": {
-		"another-mod": "*"
+		"another-mod": "*",
+		"sodium": "*"
 	}
 }
