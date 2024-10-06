@@ -1,6 +1,6 @@
 ---
 name: Pull Request
-about: Submit a pull request to Zirconium
+about: Submit a pull request to Cobalt
 title: "[PR] "
 labels: enhancement
 assignees: ''
@@ -58,5 +58,5 @@ Add any additional context or information about your pull request here. This cou
 
 ---
 
-**Thank you for contributing to Zirconium!**
+**Thank you for contributing to Cobalt!**
 
