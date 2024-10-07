@@ -30,7 +30,6 @@
 		"fabric-api": "*"
 	},
 	"suggests": {
-		"another-mod": "*",
 		"sodium": "*"
 	}
 }

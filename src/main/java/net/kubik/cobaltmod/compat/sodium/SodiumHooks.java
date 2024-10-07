@@ -5,17 +5,9 @@ import net.kubik.cobaltmod.util.ChunkCalculator;
 
 import java.lang.reflect.Method;
 
-/**
- * Handles the direct interaction with Sodium's internals using reflection.
- */
 public class SodiumHooks {
-    /** The chunk calculator instance. */
     private static ChunkCalculator chunkCalculator;
 
-    /**
-     * Initializes the Sodium hooks.
-     * @param calculator The chunk calculator instance.
-     */
     public static void init(ChunkCalculator calculator) {
         chunkCalculator = calculator;
         try {
@@ -25,19 +17,18 @@ public class SodiumHooks {
         }
     }
 
-    /**
-     * Sets up the hooks into Sodium's rendering system.
-     * This method uses reflection to interact with Sodium's classes without creating a hard dependency.
-     * @throws Exception if any reflection operations fail.
-     */
     private static void initSodiumHooks() throws Exception {
-        Class<?> sodiumWorldRendererClass = Class.forName("me.jellysquid.mods.sodium.client.render.SodiumWorldRenderer");
-        Method getInstance = sodiumWorldRendererClass.getMethod("getInstance");
-        Object sodiumWorldRenderer = getInstance.invoke(null);
+        Class<?> sodiumWorldRendererClass = Class.forName("net.caffeinemc.mods.sodium.client.render.SodiumWorldRenderer");
+        Method instanceMethod = sodiumWorldRendererClass.getMethod("instance");
+        Object sodiumWorldRenderer = instanceMethod.invoke(null);
 
         // Set up chunk build callback
-        Class<?> chunkBuildCallbackClass = Class.forName("me.jellysquid.mods.sodium.client.render.SodiumWorldRenderer$ChunkBuildCallback");
-        Method setChunkBuildCallback = sodiumWorldRendererClass.getMethod("setChunkBuildCallback", chunkBuildCallbackClass);
+        Class<?> renderSectionManagerClass = Class.forName("net.caffeinemc.mods.sodium.client.render.chunk.RenderSectionManager");
+        Method getRenderSectionManagerMethod = sodiumWorldRendererClass.getMethod("getRenderSectionManager");
+        Object renderSectionManager = getRenderSectionManagerMethod.invoke(sodiumWorldRenderer);
+
+        Class<?> chunkBuildCallbackClass = Class.forName("net.caffeinemc.mods.sodium.client.render.chunk.RenderSectionManager$ChunkBuildCallback");
+        Method addChunkBuildCallbackMethod = renderSectionManagerClass.getMethod("addChunkBuildCallback", chunkBuildCallbackClass);
 
         Object chunkBuildCallback = java.lang.reflect.Proxy.newProxyInstance(
                 SodiumHooks.class.getClassLoader(),
@@ -45,40 +36,62 @@ public class SodiumHooks {
                 (proxy, method, args) -> {
                     if (method.getName().equals("shouldBuild")) {
                         Object renderSection = args[0];
-                        Method getPosition = renderSection.getClass().getMethod("getPosition");
-                        Object chunkSectionPos = getPosition.invoke(renderSection);
-                        Method getX = chunkSectionPos.getClass().getMethod("getX");
-                        Method getZ = chunkSectionPos.getClass().getMethod("getZ");
-                        int x = (int) getX.invoke(chunkSectionPos);
-                        int z = (int) getZ.invoke(chunkSectionPos);
+                        Method getPositionMethod = renderSection.getClass().getMethod("getPosition");
+                        Object sectionPos = getPositionMethod.invoke(renderSection);
+                        Method getXMethod = sectionPos.getClass().getMethod("getX");
+                        Method getZMethod = sectionPos.getClass().getMethod("getZ");
+                        int x = (int) getXMethod.invoke(sectionPos);
+                        int z = (int) getZMethod.invoke(sectionPos);
                         return SodiumCompatibility.shouldRenderChunk(x, z);
                     }
                     return null;
                 }
         );
 
-        setChunkBuildCallback.invoke(sodiumWorldRenderer, chunkBuildCallback);
+        addChunkBuildCallbackMethod.invoke(renderSectionManager, chunkBuildCallback);
 
         // Set up chunk render list callback
-        Class<?> chunkRenderListCallbackClass = Class.forName("me.jellysquid.mods.sodium.client.render.SodiumWorldRenderer$ChunkRenderListCallback");
-        Method setChunkRenderListCallback = sodiumWorldRendererClass.getMethod("setChunkRenderListCallback", chunkRenderListCallbackClass);
+        Class<?> chunkRenderListCallbackClass = Class.forName("net.caffeinemc.mods.sodium.client.render.chunk.RenderSectionManager$ChunkRenderListCallback");
+        Method addChunkRenderListCallbackMethod = renderSectionManagerClass.getMethod("addChunkRenderListCallback", chunkRenderListCallbackClass);
 
         Object chunkRenderListCallback = java.lang.reflect.Proxy.newProxyInstance(
                 SodiumHooks.class.getClassLoader(),
                 new Class<?>[] { chunkRenderListCallbackClass },
                 (proxy, method, args) -> {
                     if (method.getName().equals("onRenderListBuild")) {
-                        Object renderList = args[1];
-                        Method removeIf = renderList.getClass().getMethod("removeIf", java.util.function.Predicate.class);
-                        removeIf.invoke(renderList, (java.util.function.Predicate<?>) renderSection -> {
+                        Object renderLists = args[1];
+                        Method removeIfMethod = renderLists.getClass().getMethod("removeIf", java.util.function.Predicate.class);
+                        removeIfMethod.invoke(renderLists, (java.util.function.Predicate<?>) renderList -> {
                             try {
-                                Method getPosition = renderSection.getClass().getMethod("getPosition");
-                                Object chunkSectionPos = getPosition.invoke(renderSection);
-                                Method getX = chunkSectionPos.getClass().getMethod("getX");
-                                Method getZ = chunkSectionPos.getClass().getMethod("getZ");
-                                int x = (int) getX.invoke(chunkSectionPos);
-                                int z = (int) getZ.invoke(chunkSectionPos);
-                                return !SodiumCompatibility.shouldRenderChunk(x, z);
+                                Method getRegionMethod = renderList.getClass().getMethod("getRegion");
+                                Object renderRegion = getRegionMethod.invoke(renderList);
+                                Method sectionsWithEntitiesIteratorMethod = renderList.getClass().getMethod("sectionsWithEntitiesIterator");
+                                Object iterator = sectionsWithEntitiesIteratorMethod.invoke(renderList);
+
+                                if (iterator == null) {
+                                    return false;
+                                }
+
+                                Method hasNextMethod = iterator.getClass().getMethod("hasNext");
+                                Method nextByteAsIntMethod = iterator.getClass().getMethod("nextByteAsInt");
+                                Method getSectionMethod = renderRegion.getClass().getMethod("getSection", int.class);
+
+                                while ((boolean) hasNextMethod.invoke(iterator)) {
+                                    int sectionId = (int) nextByteAsIntMethod.invoke(iterator);
+                                    Object section = getSectionMethod.invoke(renderRegion, sectionId);
+                                    Method getPositionMethod = section.getClass().getMethod("getPosition");
+                                    Object sectionPos = getPositionMethod.invoke(section);
+                                    Method getXMethod = sectionPos.getClass().getMethod("getX");
+                                    Method getZMethod = sectionPos.getClass().getMethod("getZ");
+                                    int x = (int) getXMethod.invoke(sectionPos);
+                                    int z = (int) getZMethod.invoke(sectionPos);
+
+                                    if (!SodiumCompatibility.shouldRenderChunk(x, z)) {
+                                        return true;
+                                    }
+                                }
+
+                                return false;
                             } catch (Exception e) {
                                 Cobalt.LOGGER.error("Error in chunk render list callback", e);
                                 return false;
@@ -89,6 +102,6 @@ public class SodiumHooks {
                 }
         );
 
-        setChunkRenderListCallback.invoke(sodiumWorldRenderer, chunkRenderListCallback);
+        addChunkRenderListCallbackMethod.invoke(renderSectionManager, chunkRenderListCallback);
     }
 }
